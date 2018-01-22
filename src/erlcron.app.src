@@ -1,7 +1,7 @@
-{application,erlcron,
- [{description,"Erlang Implementation of cron"},
-  {vsn,"semver"},
-  {modules,[]},
-  {registered,[ecrn_agent]},
-  {applications,[kernel,stdlib]},
-  {mod,{ecrn_app,[]}}]}.
+{application, erlcron,
+ [{description, "Erlang Implementation of cron"},
+  {vsn, git},
+  {modules, []},
+  {registered, [ecrn_agent]},
+  {applications, [kernel, stdlib]},
+  {mod, {ecrn_app, []}}]}.
