@@ -96,22 +96,14 @@ init([JobRef, Job]) ->
                    alarm_ref=JobRef},
     {DateTime, Actual} = ecrn_control:datetime(),
     NewState = set_internal_time(State, DateTime, Actual),
-    case until_next_milliseconds(NewState, Job) of
-        {ok, Millis} when is_integer(Millis) ->
-            ecrn_reg:register(JobRef, self()),
-            {ok, NewState, Millis};
-        {error, _}  ->
-            {stop, normal}
-    end.
+    Millis = until_next_milliseconds(NewState, Job),
+    ecrn_reg:register(JobRef, self()),
+    {ok, NewState, Millis}.
 
 %% @private
 handle_call(_Msg, _From, State) ->
-    case until_next_milliseconds(State, State#state.job) of
-        {ok, Millis} ->
-            {reply, ok, State, Millis};
-        {error, _}  ->
-            {stop, normal, ok, State}
-    end.
+    Millis = until_next_milliseconds(State, State#state.job),
+    {reply, ok, State, Millis}.
 
 %% @private
 handle_cast(shutdown, State) ->
@@ -119,12 +111,8 @@ handle_cast(shutdown, State) ->
 handle_cast({set_datetime, DateTime, Actual}, State) ->
     fast_forward(State#state{fast_forward=true}, DateTime),
     NewState = set_internal_time(State, DateTime, Actual),
-    case until_next_milliseconds(NewState, NewState#state.job) of
-        {ok, Millis} ->
-            {noreply, NewState, Millis};
-        {error, _}  ->
-            {stop, normal, NewState}
-    end.
+    Millis = until_next_milliseconds(NewState, NewState#state.job),
+    {noreply, NewState, Millis}.
 
 %% @private
 handle_info(timeout, State = #state{job = {{once, _}, _}}) ->
@@ -132,12 +120,8 @@ handle_info(timeout, State = #state{job = {{once, _}, _}}) ->
     {stop, normal, State};
 handle_info(timeout, State = #state{timeout_type=wait_before_run}) ->
     NewState = State#state{timeout_type=normal},
-    case until_next_milliseconds(NewState, NewState#state.job) of
-        {ok, Millis} ->
-            {noreply, NewState, Millis};
-        {error, _}  ->
-            {stop, normal, NewState}
-    end;
+    Millis = until_next_milliseconds(NewState, NewState#state.job),
+    {noreply, NewState, Millis};
 handle_info(timeout, State = #state{job = Job}) ->
     do_job_run(State, Job),
     NewState = State#state{timeout_type=wait_before_run},
@@ -177,17 +161,10 @@ current_date(State) ->
 
 %% @doc Calculates the duration in milliseconds until the next time
 %% a job is to be run.
--spec until_next_milliseconds(state(), erlcron:job()) ->
-                                      {ok, erlcron:seconds()} | {error, invalid_one_exception}.
+-spec until_next_milliseconds(state(), erlcron:job()) -> erlcron:seconds().
 until_next_milliseconds(State, {When, _Job}) ->
-    try
-        Now = current_date(State),
-        Millis = ecrn_time:until_next_time(Now, When) * ?MILLISECONDS,
-        {ok, Millis}
-    catch
-        throw:invalid_once_exception ->
-            {error, invalid_once_exception}
-    end.
+    Now = current_date(State),
+    ecrn_time:until_next_time(Now, When) * ?MILLISECONDS.
 
 fast_forward(State, NewDate) ->
     try
@@ -222,4 +199,3 @@ ceiling(X) ->
         Pos when Pos > 0 -> T + 1;
         _ -> T
     end.
-

@@ -178,15 +178,8 @@ until_next_daytime_or_days_from_now(Date, Period, Days) ->
     end.
 
 normalize_seconds(Date, Seconds) ->
-    case Seconds - current_time(Date) of
-        Value when Value >= 0 ->
-            Value;
-        _ ->
-            erlang:display(erlang:get_stacktrace()),
-            throw(invalid_once_exception)
-    end.
+    Seconds - current_time(Date).
 
 -spec current_time(calendar:datetime()) -> erlcron:seconds().
 current_time({_, {H,M,S}}) ->
     S + M * 60 + H * 3600.
-
