@@ -3,6 +3,7 @@ language: erlang
 otp_release:
   - 19.3
   - 20.2
+  - 21.1
 
 script:
   - rebar3 do dialyzer, eunit, proper -n 1000
